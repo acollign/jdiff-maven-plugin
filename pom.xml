@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>mojo-parent</artifactId>
+    <version>29</version>
+  </parent>
+
+  <artifactId>jdiff-maven-plugin</artifactId>
+  <version>1.0-beta-1-SNAPSHOT</version>
+  <packaging>maven-plugin</packaging>
+
+  <name>JDiff Maven Plugin</name>
+  <description>
+    The JDiff Maven Plugin generates a JavaDoc report based on the differences between sources of two versions of a project.
+  </description>
+  
+  <developers>
+    <developer>
+      <id>rfscholte</id>
+      <name>Robert Scholte</name>
+      <timezone>Europe/Amsterdam</timezone>
+    </developer>
+  </developers>
+  
+  <prerequisites>
+    <maven>${mavenVersion}</maven>
+  </prerequisites>
+  
+  <scm>
+  	<connection>scm:svn:http://svn.codehaus.org/mojo/trunk/mojo/jdiff-maven-plugin</connection>
+  	<developerConnection>scm:svn:https://svn.codehaus.org/mojo/trunk/mojo/jdiff-maven-plugin</developerConnection>
+  	<url>http://svn.codehaus.org/mojo/trunk/mojo/jdiff-maven-plugin</url>
+  </scm>
+  <issueManagement>
+    <system>jira</system>
+    <url>http://jira.codehaus.org/browse/MJDIFF</url>
+  </issueManagement>
+  <ciManagement>
+    <system>bamboo</system>
+    <url>http://bamboo.ci.codehaus.org/browse/MOJO-MJDIFF</url>
+  </ciManagement>
+
+  <properties>
+    <mojo.java.target>1.5</mojo.java.target>
+    <mavenVersion>2.0.6</mavenVersion>
+    <scmVersion>1.5</scmVersion>
+  </properties>
+
+  <dependencies>
+    <!-- Maven Core -->
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-core</artifactId>
+      <version>${mavenVersion}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-project</artifactId>
+      <version>${mavenVersion}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-model</artifactId>
+      <version>${mavenVersion}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-artifact</artifactId>
+      <version>${mavenVersion}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-plugin-api</artifactId>
+      <version>${mavenVersion}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-toolchain</artifactId>
+      <version>1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-utils</artifactId>
+      <version>1.5.8</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>2.5</version>
+    </dependency>
+    <!-- MavenReport -->
+    <dependency>
+      <groupId>org.apache.maven.reporting</groupId>
+      <artifactId>maven-reporting-impl</artifactId>
+      <version>2.1</version>
+    </dependency>
+    <!-- Maven SCM -->
+    <dependency>
+      <groupId>org.apache.maven.scm</groupId>
+      <artifactId>maven-scm-api</artifactId>
+      <version>${scmVersion}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.scm</groupId>
+      <artifactId>maven-scm-manager-plexus</artifactId>
+      <version>${scmVersion}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.scm</groupId>
+      <artifactId>maven-scm-providers-standard</artifactId>
+      <version>${scmVersion}</version>
+      <type>pom</type>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>jdiff</groupId>
+      <artifactId>jdiff</artifactId>
+      <version>1.0.9</version>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+</project>
