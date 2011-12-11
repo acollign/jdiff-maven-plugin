@@ -52,6 +52,7 @@ import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.project.ProjectBuildingException;
 import org.apache.maven.reporting.MavenReport;
 import org.apache.maven.reporting.MavenReportException;
+import org.apache.maven.scm.ScmException;
 import org.apache.maven.scm.manager.ScmManager;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
@@ -261,7 +262,7 @@ public class JDiffMojo
     }
 
     private MavenProject resolveProject( String versionSpec )
-        throws MojoFailureException, MojoExecutionException, ProjectBuildingException, MavenReportException
+        throws MojoFailureException, MojoExecutionException, ProjectBuildingException
     {
         MavenProject result;
         if ( project.getVersion().equals( versionSpec ) )
@@ -275,7 +276,19 @@ public class JDiffMojo
                 mavenProjectBuilder.buildFromRepository( artifact, remoteRepositories, localRepository );
 
             File checkoutDirectory = new File( workingDirectory, externalProject.getVersion() );
-            fetchSources( checkoutDirectory, externalProject );
+            
+            try
+            {
+                fetchSources( checkoutDirectory, externalProject );
+            }
+            catch ( IOException e )
+            {
+                throw new MojoExecutionException( e.getMessage() );
+            }
+            catch ( ScmException e )
+            {
+                throw new MojoExecutionException( e.getMessage() );
+            }
 
             result = mavenProjectBuilder.build( new File( checkoutDirectory, "pom.xml" ), localRepository, null );
         }
@@ -308,33 +321,25 @@ public class JDiffMojo
         return connection;
     }
 
-    private void fetchSources( File checkoutDir, MavenProject mavenProject )
-        throws MavenReportException
+    private void fetchSources( File checkoutDir, MavenProject mavenProject ) throws IOException, MojoFailureException, ScmException
     {
-        try
+        if ( forceCheckout && checkoutDir.exists() )
         {
-            if ( forceCheckout && checkoutDir.exists() )
-            {
-                FileUtils.deleteDirectory( checkoutDir );
-            }
-
-            if ( checkoutDir.mkdirs() )
-            {
-
-                getLog().info( "Performing checkout to " + checkoutDir );
-
-                new ScmCommandExecutor( scmManager, getConnection( mavenProject ), getLog() ).checkout( checkoutDir.getPath() );
-            }
-            else
-            {
-                getLog().info( "Performing update to " + checkoutDir );
-
-                new ScmCommandExecutor( scmManager, getConnection( mavenProject ), getLog() ).update( checkoutDir.getPath() );
-            }
+            FileUtils.deleteDirectory( checkoutDir );
         }
-        catch ( Exception ex )
+
+        if ( checkoutDir.mkdirs() )
         {
-            throw new MavenReportException( "checkout failed.", ex );
+
+            getLog().info( "Performing checkout to " + checkoutDir );
+
+            new ScmCommandExecutor( scmManager, getConnection( mavenProject ), getLog() ).checkout( checkoutDir.getPath() );
+        }
+        else
+        {
+            getLog().info( "Performing update to " + checkoutDir );
+
+            new ScmCommandExecutor( scmManager, getConnection( mavenProject ), getLog() ).update( checkoutDir.getPath() );
         }
     }
 
