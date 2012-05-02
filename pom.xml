@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>jdiff-maven-plugin</artifactId>
-  <version>1.0-beta-2-SNAPSHOT</version>
+  <version>1.0-beta-1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>JDiff Maven Plugin</name>
