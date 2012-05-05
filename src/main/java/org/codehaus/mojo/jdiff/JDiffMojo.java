@@ -27,12 +27,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 
 import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataRetrievalException;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
@@ -149,11 +151,11 @@ public class JDiffMojo
     private MavenProject project;
 
     /**
-     * @parameter default-value="${plugin.artifacts}"
+     * @parameter default-value="${plugin.artifactMap}"
      * @required
      * @readonly
      */
-    private List<Artifact> pluginArtifacts;
+    private Map<String, Artifact> pluginArtifacts;
 
     /** @component */
     private MavenProjectBuilder mavenProjectBuilder;
@@ -352,7 +354,7 @@ public class JDiffMojo
 
             javadoc.addArgumentPair( "doclet", "jdiff.JDiff" );
 
-            javadoc.addArgumentPair( "docletpath", getPluginClasspath() );
+            javadoc.addArgumentPair( "docletpath", getDocletpath() );
 
             javadoc.addArgumentPair( "apiname", tag );
 
@@ -383,16 +385,22 @@ public class JDiffMojo
         }
     }
 
-    private String getPluginClasspath()
+    protected String getDocletpath()
     {
-        String cp = "";
+        //MJDIFF-12 seems to be caused by a too long docletPath
+        //Now only include the required plugin dependencies
+        //We loose transitive dependency resolution, but that shouldn't be a problem in this case
+        StringBuilder docletPath = new StringBuilder();
+        
+        String jdiffKey = ArtifactUtils.versionlessKey( "jdiff", "jdiff" );
+        Artifact jdiffArtifact = pluginArtifacts.get( jdiffKey );
+        docletPath.append( jdiffArtifact.getFile().getAbsolutePath() ).append( ';' );
 
-        for ( Artifact artifact : pluginArtifacts )
-        {
-            cp += ";" + artifact.getFile().getAbsolutePath();
-        }
+        String xercesKey = ArtifactUtils.versionlessKey( "xerces", "xercesImpl" );
+        Artifact xercesArtifact = pluginArtifacts.get( xercesKey );
+        docletPath.append( xercesArtifact.getFile().getAbsolutePath() ).append( ';' );
 
-        return cp.length() > 0 ? cp.substring( 1 ) : cp;
+        return docletPath.toString();
     }
 
     private void generateReport( String srcDir, String oldApi, String newApi )
@@ -418,7 +426,7 @@ public class JDiffMojo
 
             javadoc.addArgumentPair( "doclet", "jdiff.JDiff" );
 
-            javadoc.addArgumentPair( "docletpath", getPluginClasspath() );
+            javadoc.addArgumentPair( "docletpath", getDocletpath() );
 
             javadoc.addArgumentPair( "oldapi", oldApi );
 
