@@ -22,10 +22,12 @@ package org.codehaus.mojo.jdiff;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.artifact.Artifact;
@@ -40,7 +42,7 @@ import org.codehaus.plexus.util.cli.CommandLineUtils;
 
 /**
  * Generates an API descriptor of the Java sources.
- * 
+ *
  * @goal descriptor
  * @execute phase="generate-sources"
  * @requiresDependencyResolution compile
@@ -49,21 +51,21 @@ public class JDiffDescriptorMojo extends AbstractMojo {
 
 	/**
 	 * The Javadoc executable.
-	 * 
+	 *
 	 * @parameter expression="${javadocExecutable}"
 	 */
 	private String javadocExecutable;
 
 	/**
 	 * The JDiff API name.
-	 * 
+	 *
 	 * @parameter default-value="${project.name}-${project.version}"
 	 */
 	private String apiname;
 
 	/**
 	 * The output directory.
-	 * 
+	 *
 	 * @parameter default-value="${project.build.outputDirectory}"
 	 * @required
 	 * @readonly
@@ -72,7 +74,7 @@ public class JDiffDescriptorMojo extends AbstractMojo {
 
 	/**
 	 * The working directory for this plugin.
-	 * 
+	 *
 	 * @parameter default-value="${project.build.directory}/jdiff"
 	 * @readonly
 	 */
@@ -80,7 +82,7 @@ public class JDiffDescriptorMojo extends AbstractMojo {
 
 	/**
 	 * The name of the destination directory.
-	 * 
+	 *
 	 * @parameter expression="${destDir}" default-value="apidocs"
 	 */
 	private String destDir;
@@ -88,7 +90,7 @@ public class JDiffDescriptorMojo extends AbstractMojo {
 	/**
 	 * The current build session instance. This is used for toolchain manager
 	 * API calls.
-	 * 
+	 *
 	 * @parameter expression="${session}"
 	 * @required
 	 * @readonly
@@ -97,7 +99,7 @@ public class JDiffDescriptorMojo extends AbstractMojo {
 
 	/**
 	 * The Maven project.
-	 * 
+	 *
 	 * @parameter default-value="${project}"
 	 * @required
 	 * @readonly
@@ -106,14 +108,14 @@ public class JDiffDescriptorMojo extends AbstractMojo {
 
 	/**
 	 * The {@link ToolchainManager}.
-	 * 
+	 *
 	 * @component
 	 */
 	private ToolchainManager toolchainManager;
 
 	/**
 	 * Artifacts.
-	 * 
+	 *
 	 * @parameter default-value="${plugin.artifacts}"
 	 * @required
 	 * @readonly
@@ -121,13 +123,21 @@ public class JDiffDescriptorMojo extends AbstractMojo {
 	private List<Artifact> pluginArtifacts;
 
 	/**
+	 * List of packages to include separated by space.
+	 *
+	 * @parameter expression="${includePackageNames}"
+	 */
+	private String includePackageNames;
+
+
+	/**
 	 * Holds the packages of both the comparisonVersion and baseVersion
 	 */
-	private Set<String> packages = new HashSet<String>();
+	private final Set<String> packages = new HashSet<String>();
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @see org.apache.maven.plugin.AbstractMojo#execute()
 	 */
 	public void execute() throws MojoExecutionException {
@@ -141,7 +151,7 @@ public class JDiffDescriptorMojo extends AbstractMojo {
 
 	/**
 	 * Generates the JDiff XML descriptor.
-	 * 
+	 *
 	 * @param apiname
 	 *            the api name used as a filename
 	 * @throws JavadocExecutionException
@@ -173,7 +183,18 @@ public class JDiffDescriptorMojo extends AbstractMojo {
 			javadoc.addArgumentPair("sourcepath",
 					StringUtils.quoteAndEscape(sourcePath, '\''));
 
-			Set<String> pckgs = JDiffUtils.getPackages(project);
+			Set<String> pckgs = new TreeSet<String>();
+
+			if(includePackageNames != null && !includePackageNames.isEmpty()) {
+				List<String> names = Arrays.asList(includePackageNames.split(" "));
+
+				getLog().debug("Included packages (overwritten by [includePackageNames] parameter) : " + names);
+
+				pckgs.addAll(names);
+			} else {
+				pckgs = JDiffUtils.getPackages(project);
+			}
+
 			for (String pckg : pckgs) {
 				javadoc.addArgument(pckg);
 			}
@@ -187,7 +208,7 @@ public class JDiffDescriptorMojo extends AbstractMojo {
 
 	/**
 	 * Return the plugin classpath.
-	 * 
+	 *
 	 * @return the plugin classpath
 	 */
 	private String getPluginClasspath() {
@@ -201,7 +222,7 @@ public class JDiffDescriptorMojo extends AbstractMojo {
 
 	/**
 	 * Returns the {@link ToolchainManager}.
-	 * 
+	 *
 	 * @return the {@link ToolchainManager}
 	 */
 	private Toolchain getToolchain() {
@@ -213,7 +234,7 @@ public class JDiffDescriptorMojo extends AbstractMojo {
 	 * Get the path of the Javadoc tool executable depending the user entry or
 	 * try to find it depending the OS or the <code>java.home</code> system
 	 * property or the <code>JAVA_HOME</code> environment variable.
-	 * 
+	 *
 	 * @return the path of the Javadoc tool
 	 * @throws IOException
 	 *             if not found
