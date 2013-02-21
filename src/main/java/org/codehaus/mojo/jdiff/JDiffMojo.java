@@ -47,6 +47,12 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Execute;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.project.ProjectBuildingException;
@@ -63,11 +69,9 @@ import org.codehaus.plexus.util.cli.CommandLineUtils;
 
 /**
  * Generates an API difference report between Java sources of two SCM versions
- * 
- * @goal jdiff
- * @execute phase="generate-sources"
- * @requiresDependencyResolution compile
  */
+@Mojo( name = "jdiff", requiresDependencyResolution = ResolutionScope.COMPILE )
+@Execute( phase = LifecyclePhase.GENERATE_SOURCES )
 public class JDiffMojo
     extends AbstractMojo
     implements MavenReport
@@ -75,117 +79,93 @@ public class JDiffMojo
 
     /**
      * The javadoc executable.
-     * 
-     * @parameter expression="${javadocExecutable}"
      */
+    @Parameter( property="javadocExecutable" )
     private String javadocExecutable;
 
     /**
      * Version to compare the base code against. This will be the left-hand side of the report.
-     * 
-     * @parameter expression="${jdiff.comparisonVersion}" default-value="(,${project.version})"
      */
+    @Parameter( property = "jdiff.comparisonVersion", defaultValue = "(,${project.version})" )
     private String comparisonVersion;
 
     /**
      * The base code version. This will be the right-hand side of the report.
-     * 
-     * @parameter expression="${jdiff.baseVersion}" default-value="${project.version}"
      */
+    @Parameter( property = "jdiff.baseVersion", defaultValue = "${project.version}" )
     private String baseVersion;
 
     /**
      * Force a checkout instead of an update when the sources have already been checked out during a previous run. 
      * 
-     * @parameter expression="${jdiff.forceCheckout}" default-value="false"
      */
+    @Parameter( property = "jdiff.forceCheckout", defaultValue = "false" )
     private boolean forceCheckout;
     
     /**
      * Specifies the destination directory where javadoc saves the generated HTML files.
-     * 
-     * @parameter default-value="${project.reporting.outputDirectory}/apidocs"
-     * @required
-     * @readonly 
      */
+    @Parameter( defaultValue = "${project.reporting.outputDirectory}/apidocs", required = true, readonly = true )
     private File reportOutputDirectory;
     
     /**
      * The name of the destination directory.
-     *
-     * @parameter expression="${destDir}" default-value="apidocs"
      */
+    @Parameter( property = "destDir", defaultValue = "apidocs" )
     private String destDir;
 
     /**
-     * @parameter default-value="${project.build.outputDirectory}"
-     * @required
-     * @readonly
      */
+    @Parameter( defaultValue = "${project.build.outputDirectory}", required = true, readonly = true )
     private String buildOutputDirectory;
 
     /**
      * The working directory for this plugin.
-     * 
-     * @parameter default-value="${project.build.directory}/jdiff"
-     * @readonly
      */
+    @Parameter( defaultValue = "${project.build.directory}/jdiff", readonly = true )
     private File workingDirectory;
 
     /**
      * The current build session instance. This is used for toolchain manager API calls.
-     * 
-     * @parameter expression="${session}"
-     * @required
-     * @readonly
      */
+    @Parameter( defaultValue = "${session}", required = true, readonly = true )
     private MavenSession session;
 
     /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
      */
+    @Parameter( defaultValue = "${project}", required = true, readonly = true )
     private MavenProject project;
 
     /**
-     * @parameter default-value="${plugin.artifacts}"
-     * @required
-     * @readonly
      */
+    @Parameter( defaultValue = "${plugin.artifacts}", required = true, readonly = true )
     private List<Artifact> pluginArtifacts;
 
-    /** @component */
+    @Component
     private MavenProjectBuilder mavenProjectBuilder;
 
-    /** @component */
+    @Component
     private ToolchainManager toolchainManager;
 
-    /** @component */
+    @Component
     private ScmManager scmManager;
 
-    /** @component */
+    @Component
     private ArtifactMetadataSource metadataSource;
 
-    /** @component */
+    @Component
     private ArtifactFactory factory;
 
     /**
      * The local repository where the artifacts are located.
-     * 
-     * @parameter expression="${localRepository}"
-     * @readonly
-     * @required
      */
+    @Parameter( defaultValue = "${localRepository}", required = true, readonly = true )
     private ArtifactRepository localRepository;
 
     /**
      * The remote repositories where artifacts are located.
-     * 
-     * @parameter expression="${project.remoteArtifactRepositories}"
-     * @readonly
-     * @required
      */
+    @Parameter( defaultValue = "${project.remoteArtifactRepositories}", required=true, readonly=true )
     private List<ArtifactRepository> remoteRepositories;
 
     /**
@@ -196,17 +176,15 @@ public class JDiffMojo
     /**
      * The description of the JDiff report to be displayed in the Maven Generated Reports page (i.e.
      * <code>project-reports.html</code>).
-     * 
-     * @parameter
      */
+    @Parameter
     private String description;
 
     /**
      * The name of the JDiff report to be displayed in the Maven Generated Reports page (i.e.
      * <code>project-reports.html</code>).
-     * 
-     * @parameter
      */
+    @Parameter
     private String name;
 
     public void executeReport( Locale locale )

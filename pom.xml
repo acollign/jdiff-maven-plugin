@@ -49,6 +49,20 @@
     <scmVersion>1.8.1</scmVersion>
   </properties>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-plugin-plugin</artifactId>
+        <version>3.2</version>
+        <configuration>
+          <!-- see http://jira.codehaus.org/browse/MNG-5346 -->
+          <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  
   <dependencies>
     <!-- Maven Core -->
     <dependency>
@@ -93,6 +107,12 @@
     </dependency>
     <!-- MavenReport -->
     <dependency>
+      <groupId>org.apache.maven.plugin-tools</groupId>
+      <artifactId>maven-plugin-annotations</artifactId>
+      <version>3.2</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.apache.maven.reporting</groupId>
       <artifactId>maven-reporting-impl</artifactId>
       <version>2.1</version>
@@ -130,7 +150,7 @@
     </dependency>
   </dependencies>
   
-    <profiles>
+  <profiles>
     <profile>
       <id>run-its</id>
       <activation>
