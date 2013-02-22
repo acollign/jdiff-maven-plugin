@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -138,8 +139,8 @@ public class JDiffMojo
 
     /**
      */
-    @Parameter( defaultValue = "${plugin.artifacts}", required = true, readonly = true )
-    private List<Artifact> pluginArtifacts;
+    @Parameter( defaultValue = "${plugin.artifactMap}", required = true, readonly = true )
+    private Map<String, Artifact> pluginArtifactMap;
 
     @Component
     private MavenProjectBuilder mavenProjectBuilder;
@@ -261,11 +262,11 @@ public class JDiffMojo
             }
             catch ( IOException e )
             {
-                throw new MojoExecutionException( e.getMessage() );
+                throw new MojoExecutionException( e.getMessage(), e );
             }
             catch ( ScmException e )
             {
-                throw new MojoExecutionException( e.getMessage() );
+                throw new MojoExecutionException( e.getMessage(), e );
             }
 
             result = mavenProjectBuilder.build( new File( checkoutDirectory, "pom.xml" ), localRepository, null );
@@ -363,13 +364,14 @@ public class JDiffMojo
 
     private String getPluginClasspath()
     {
-        String cp = "";
-        for ( Artifact artifact : pluginArtifacts )
-        {
-            cp += File.pathSeparatorChar + artifact.getFile().getAbsolutePath();
-        }
-
-        return cp.length() > 0 ? cp.substring( 1 ) : cp;
+        //@todo prepend with optional docletArtifacts
+        StringBuffer cp = new StringBuffer();
+        cp.append( pluginArtifactMap.get( "jdiff:jdiff" ).getFile().getAbsolutePath() );
+        cp.append( File.pathSeparatorChar );
+        cp.append( pluginArtifactMap.get( "xerces:xercesImpl" ).getFile().getAbsolutePath() );
+        cp.append( File.pathSeparatorChar );
+        
+        return cp.toString();
     }
 
     private void generateReport( String srcDir, String oldApi, String newApi )
