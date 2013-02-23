@@ -23,8 +23,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -48,6 +50,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Execute;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -77,6 +80,8 @@ public class JDiffMojo
     extends AbstractMojo
     implements MavenReport
 {
+
+    private static final String JDIFF_CHECKOUT_DIRECTORY = "jdiff.checkoutDirectory";
 
     /**
      * The javadoc executable.
@@ -131,12 +136,18 @@ public class JDiffMojo
      */
     @Parameter( defaultValue = "${session}", required = true, readonly = true )
     private MavenSession session;
+    
+    @Parameter ( defaultValue = "${plugin}", required = true, readonly = true )
+    private PluginDescriptor pluginDescriptor;
 
     /**
      */
     @Parameter( defaultValue = "${project}", required = true, readonly = true )
     private MavenProject project;
 
+    @Parameter( defaultValue = "${reactorProjects}", required = true, readonly = true )
+    List<MavenProject> reactorProjects;
+    
     /**
      */
     @Parameter( defaultValue = "${plugin.artifactMap}", required = true, readonly = true )
@@ -250,26 +261,13 @@ public class JDiffMojo
         }
         else
         {
-            Artifact artifact = resolveArtifact( versionSpec );
-            MavenProject externalProject =
-                mavenProjectBuilder.buildFromRepository( artifact, remoteRepositories, localRepository );
-
-            File checkoutDirectory = new File( workingDirectory, externalProject.getVersion() );
+            File executionRootDirectory = new File( session.getExecutionRootDirectory() );
+            String modulePath  = executionRootDirectory.toURI().relativize( project.getBasedir().toURI() ).getPath();
             
-            try
-            {
-                fetchSources( checkoutDirectory, externalProject );
-            }
-            catch ( IOException e )
-            {
-                throw new MojoExecutionException( e.getMessage(), e );
-            }
-            catch ( ScmException e )
-            {
-                throw new MojoExecutionException( e.getMessage(), e );
-            }
-
-            result = mavenProjectBuilder.build( new File( checkoutDirectory, "pom.xml" ), localRepository, null );
+            File checkoutDirectory = (File) session.getPluginContext( pluginDescriptor, reactorProjects.get( 0 ) ).get( JDIFF_CHECKOUT_DIRECTORY );
+            result = mavenProjectBuilder.build( new File( checkoutDirectory, modulePath + "pom.xml" ), localRepository, null );
+            
+            getLog().debug(  new File( checkoutDirectory, modulePath + "pom.xml" ).getAbsolutePath() );
         }
         return result;
     }
@@ -300,7 +298,7 @@ public class JDiffMojo
         return connection;
     }
 
-    private void fetchSources( File checkoutDir, MavenProject mavenProject ) throws IOException, MojoFailureException, ScmException
+    private void fetchSources( final File checkoutDir, MavenProject mavenProject ) throws IOException, MojoFailureException, ScmException
     {
         if ( forceCheckout && checkoutDir.exists() )
         {
@@ -642,6 +640,38 @@ public class JDiffMojo
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {
+        // first project should do the checkout
+        if( project.equals( reactorProjects.get( 0 ) ) )
+        {
+            Artifact artifact = resolveArtifact( comparisonVersion );
+            MavenProject externalProject;
+            try
+            {
+                externalProject = mavenProjectBuilder.buildFromRepository( artifact, remoteRepositories, localRepository );
+            }
+            catch ( ProjectBuildingException e )
+            {
+                throw new MojoExecutionException( e.getMessage(), e );
+            }
+
+            File checkoutDirectory = new File( workingDirectory, externalProject.getVersion() );
+            
+            try
+            {
+                fetchSources( checkoutDirectory, externalProject );
+                
+                session.getPluginContext( pluginDescriptor, project ).put( JDIFF_CHECKOUT_DIRECTORY, checkoutDirectory );
+            }
+            catch ( IOException e )
+            {
+                throw new MojoExecutionException( e.getMessage(), e );
+            }
+            catch ( ScmException e )
+            {
+                throw new MojoExecutionException( e.getMessage(), e );
+            }
+        }
+        
         if ( !canGenerateReport() )
         {
             return;
@@ -731,9 +761,21 @@ public class JDiffMojo
         return reportOutputDirectory;
     }
 
-    /** {@inheritDoc} */
     public boolean canGenerateReport()
     {
-        return true;
+       return !getProjectSourceRoots( project ).isEmpty();
     }
+    
+    private List<String> getProjectSourceRoots( MavenProject p )
+    {
+        if ( "pom".equals( p.getPackaging().toLowerCase() ) )
+        {
+            return Collections.emptyList();
+        }
+
+        return ( p.getCompileSourceRoots() == null
+            ? Collections.<String>emptyList()
+            : new LinkedList<String>( p.getCompileSourceRoots() ) );
+    }
+    
 }
