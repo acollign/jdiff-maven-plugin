@@ -25,6 +25,12 @@
     </developer>
   </developers>
   
+  <contributors>
+    <contributor>
+      <name>Alexandre COLLIGNON</name>
+    </contributor>
+  </contributors>
+  
   <prerequisites>
     <maven>${mavenVersion}</maven>
   </prerequisites>
