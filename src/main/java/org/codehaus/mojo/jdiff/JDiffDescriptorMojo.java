@@ -159,7 +159,7 @@ public class JDiffDescriptorMojo
             javadoc.addArgumentPair( "classpath", StringUtils.quoteAndEscape( classpath, '\'' ) );
 
             String sourcePath =
-                StringUtils.join( JDiffUtils.getProjectSourceRoots( project ).iterator(), File.pathSeparator );
+                StringUtils.join( JDiffUtils.getProjectSourceRoots( project, project.getCompileSourceRoots() ).iterator(), File.pathSeparator );
             javadoc.addArgumentPair( "sourcepath", StringUtils.quoteAndEscape( sourcePath, '\'' ) );
 
             Set<String> pckgs = new TreeSet<String>();
@@ -174,7 +174,7 @@ public class JDiffDescriptorMojo
             }
             else
             {
-                pckgs = JDiffUtils.getPackages( project );
+                pckgs = JDiffUtils.getPackages( project.getBasedir(), project.getCompileSourceRoots() );
             }
 
             for ( String pckg : pckgs )

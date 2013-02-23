@@ -42,14 +42,14 @@ public class JDiffUtils
         // hide constructor of utility class
     }
 
-    public static List<String> getProjectSourceRoots( MavenProject p )
+    public static List<String> getProjectSourceRoots( MavenProject p, List<String> compileSourceRoots  )
     {
         if ( "pom".equals( p.getPackaging().toLowerCase() ) )
         {
             return Collections.emptyList();
         }
-        return ( p.getCompileSourceRoots() == null ? Collections.EMPTY_LIST
-                        : new LinkedList( p.getCompileSourceRoots() ) );
+        return ( compileSourceRoots == null ? Collections.<String>emptyList()
+                        : new LinkedList<String>( compileSourceRoots ) );
     }
 
     public static List<String> getClasspathElements( MavenProject project )
@@ -63,16 +63,15 @@ public class JDiffUtils
         return classpathElements;
     }
 
-    public static Set<String> getPackages( MavenProject project )
+    public static Set<String> getPackages( File basedir, List<String> compileSourceRoots  )
     {
         Set<String> packages = new HashSet<String>();
-        List<String> compileRoots = project.getCompileSourceRoots();
-        for ( String compileRoot : compileRoots )
+        for ( String compileRoot : compileSourceRoots )
         {
             try
             {
                 List<String> files =
-                    FileUtils.getFileNames( FileUtils.resolveFile( project.getBasedir(), compileRoot ), "**/*.java",
+                    FileUtils.getFileNames( FileUtils.resolveFile( basedir, compileRoot ), "**/*.java",
                                             null, false );
                 for ( String file : files )
                 {
