@@ -84,5 +84,11 @@ public class TestJDiffMojo
     {
         return build.getTestSourceDirectory();
     }
+    
+    @Override
+    protected String getApiName( String lhsTag )
+    {
+        return lhsTag + "-test";
+    }
 
 }

@@ -83,5 +83,11 @@ public class JDiffMojo
     {
         return build.getSourceDirectory();
     }
+    
+    @Override
+    protected String getApiName( String lhsTag )
+    {
+        return lhsTag;
+    }
 
 }

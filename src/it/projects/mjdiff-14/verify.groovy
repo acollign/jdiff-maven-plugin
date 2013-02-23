@@ -19,3 +19,5 @@
 assert new File( basedir, 'target/site/testapidocs/changes' ).isDirectory()
 assert new File( basedir, 'target/site/testapidocs/changes.html' ).exists()
 assert new File( basedir, 'target/site/testapidocs/black.gif' ).exists()
+assert new File( basedir, 'target/jdiff/1.0-test.xml' ).exists()
+assert new File( basedir, 'target/jdiff/1.1-SNAPSHOT-test.xml' ).exists()

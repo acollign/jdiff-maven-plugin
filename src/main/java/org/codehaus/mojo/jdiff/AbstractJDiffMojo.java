@@ -170,8 +170,8 @@ public abstract class AbstractJDiffMojo
             throw new MavenReportException( e.getMessage() );
         }
     
-        String lhsTag = lhsProject.getVersion();
-        String rhsTag = rhsProject.getVersion();
+        String lhsTag = getApiName( lhsProject.getVersion() );
+        String rhsTag = getApiName( rhsProject.getVersion() );
     
         try
         {
@@ -195,6 +195,8 @@ public abstract class AbstractJDiffMojo
         }
     }
 
+    protected abstract String getApiName( String lhsTag );
+    
     protected abstract String getSourceDirectory( Build build );
 
     public boolean isExternalReport()
