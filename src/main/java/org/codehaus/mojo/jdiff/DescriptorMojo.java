@@ -52,7 +52,7 @@ import org.codehaus.plexus.util.cli.CommandLineUtils;
  */
 @Mojo( name = "descriptor", requiresDependencyResolution = ResolutionScope.COMPILE )
 @Execute( phase = LifecyclePhase.GENERATE_SOURCES )
-public class JDiffDescriptorMojo
+public class DescriptorMojo
     extends AbstractMojo
 {
 
