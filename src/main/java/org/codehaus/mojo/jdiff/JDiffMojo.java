@@ -24,17 +24,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.Set;
 
-import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataRetrievalException;
@@ -46,8 +41,6 @@ import org.apache.maven.artifact.versioning.OverConstrainedVersionException;
 import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.doxia.sink.Sink;
 import org.apache.maven.doxia.sink.SinkFactory;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
@@ -64,12 +57,9 @@ import org.apache.maven.reporting.MavenReport;
 import org.apache.maven.reporting.MavenReportException;
 import org.apache.maven.scm.ScmException;
 import org.apache.maven.scm.manager.ScmManager;
-import org.apache.maven.toolchain.Toolchain;
-import org.apache.maven.toolchain.ToolchainManager;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
-import org.codehaus.plexus.util.cli.CommandLineUtils;
 
 /**
  * Generates an API difference report between Java sources of two SCM versions
@@ -77,17 +67,11 @@ import org.codehaus.plexus.util.cli.CommandLineUtils;
 @Mojo( name = "jdiff", requiresDependencyResolution = ResolutionScope.COMPILE )
 @Execute( phase = LifecyclePhase.GENERATE_SOURCES )
 public class JDiffMojo
-    extends AbstractMojo
+    extends BaseJDiffMojo
     implements MavenReport
 {
 
     private static final String JDIFF_CHECKOUT_DIRECTORY = "jdiff.checkoutDirectory";
-
-    /**
-     * The javadoc executable.
-     */
-    @Parameter( property="javadocExecutable" )
-    private String javadocExecutable;
 
     /**
      * Version to compare the base code against. This will be the left-hand side of the report.
@@ -102,62 +86,31 @@ public class JDiffMojo
     private String baseVersion;
 
     /**
-     * Force a checkout instead of an update when the sources have already been checked out during a previous run. 
-     * 
+     * Force a checkout instead of an update when the sources have already been checked out during a previous run.
      */
     @Parameter( property = "jdiff.forceCheckout", defaultValue = "false" )
     private boolean forceCheckout;
-    
+
     /**
      * Specifies the destination directory where javadoc saves the generated HTML files.
      */
     @Parameter( defaultValue = "${project.reporting.outputDirectory}/apidocs", required = true, readonly = true )
     private File reportOutputDirectory;
-    
+
     /**
      * The name of the destination directory.
      */
     @Parameter( property = "destDir", defaultValue = "apidocs" )
     private String destDir;
 
-    /**
-     */
-    @Parameter( defaultValue = "${project.build.outputDirectory}", required = true, readonly = true )
-    private String buildOutputDirectory;
-
-    /**
-     * The working directory for this plugin.
-     */
-    @Parameter( defaultValue = "${project.build.directory}/jdiff", readonly = true )
-    private File workingDirectory;
-
-    /**
-     * The current build session instance. This is used for toolchain manager API calls.
-     */
-    @Parameter( defaultValue = "${session}", required = true, readonly = true )
-    private MavenSession session;
-    
-    @Parameter ( defaultValue = "${plugin}", required = true, readonly = true )
+    @Parameter( defaultValue = "${plugin}", required = true, readonly = true )
     private PluginDescriptor pluginDescriptor;
-
-    /**
-     */
-    @Parameter( defaultValue = "${project}", required = true, readonly = true )
-    private MavenProject project;
 
     @Parameter( defaultValue = "${reactorProjects}", required = true, readonly = true )
     List<MavenProject> reactorProjects;
-    
-    /**
-     */
-    @Parameter( defaultValue = "${plugin.artifactMap}", required = true, readonly = true )
-    private Map<String, Artifact> pluginArtifactMap;
 
     @Component
     private MavenProjectBuilder mavenProjectBuilder;
-
-    @Component
-    private ToolchainManager toolchainManager;
 
     @Component
     private ScmManager scmManager;
@@ -177,13 +130,8 @@ public class JDiffMojo
     /**
      * The remote repositories where artifacts are located.
      */
-    @Parameter( defaultValue = "${project.remoteArtifactRepositories}", required=true, readonly=true )
+    @Parameter( defaultValue = "${project.remoteArtifactRepositories}", required = true, readonly = true )
     private List<ArtifactRepository> remoteRepositories;
-
-    /**
-     * Holds the packages of both the comparisonVersion and baseVersion
-     */
-    private Set<String> packages = new HashSet<String>();
 
     /**
      * The description of the JDiff report to be displayed in the Maven Generated Reports page (i.e.
@@ -235,10 +183,11 @@ public class JDiffMojo
         }
 
         generateReport( rhsProject.getBuild().getSourceDirectory(), lhsTag, rhsTag );
-        
+
         try
         {
-            IOUtil.copy( getClass().getResourceAsStream( "/black.gif" ), new FileWriter( new File( reportOutputDirectory, "black.gif" ) ) );
+            IOUtil.copy( getClass().getResourceAsStream( "/black.gif" ),
+                         new FileWriter( new File( reportOutputDirectory, "black.gif" ) ) );
         }
         catch ( IOException e )
         {
@@ -262,12 +211,14 @@ public class JDiffMojo
         else
         {
             File executionRootDirectory = new File( session.getExecutionRootDirectory() );
-            String modulePath  = executionRootDirectory.toURI().relativize( project.getBasedir().toURI() ).getPath();
-            
-            File checkoutDirectory = (File) session.getPluginContext( pluginDescriptor, reactorProjects.get( 0 ) ).get( JDIFF_CHECKOUT_DIRECTORY );
-            result = mavenProjectBuilder.build( new File( checkoutDirectory, modulePath + "pom.xml" ), localRepository, null );
-            
-            getLog().debug(  new File( checkoutDirectory, modulePath + "pom.xml" ).getAbsolutePath() );
+            String modulePath = executionRootDirectory.toURI().relativize( project.getBasedir().toURI() ).getPath();
+
+            File checkoutDirectory =
+                (File) session.getPluginContext( pluginDescriptor, reactorProjects.get( 0 ) ).get( JDIFF_CHECKOUT_DIRECTORY );
+            result =
+                mavenProjectBuilder.build( new File( checkoutDirectory, modulePath + "pom.xml" ), localRepository, null );
+
+            getLog().debug( new File( checkoutDirectory, modulePath + "pom.xml" ).getAbsolutePath() );
         }
         return result;
     }
@@ -298,7 +249,8 @@ public class JDiffMojo
         return connection;
     }
 
-    private void fetchSources( final File checkoutDir, MavenProject mavenProject ) throws IOException, MojoFailureException, ScmException
+    private void fetchSources( final File checkoutDir, MavenProject mavenProject )
+        throws IOException, MojoFailureException, ScmException
     {
         if ( forceCheckout && checkoutDir.exists() )
         {
@@ -320,65 +272,13 @@ public class JDiffMojo
         }
     }
 
-    private void generateJDiffXML( MavenProject project, String tag )
-        throws JavadocExecutionException
-    {
-        try
-        {
-            JavadocExecutor javadoc = new JavadocExecutor( getJavadocExecutable(), getLog() );
-
-            javadoc.addArgumentPair( "doclet", "jdiff.JDiff" );
-
-            javadoc.addArgumentPair( "docletpath", getPluginClasspath() );
-
-            javadoc.addArgumentPair( "apiname", tag );
-
-            javadoc.addArgumentPair( "apidir", workingDirectory.getAbsolutePath() );
-
-            List<String> classpathElements = new ArrayList<String>();
-            classpathElements.add( buildOutputDirectory );
-            classpathElements.addAll( JDiffUtils.getClasspathElements( project ) );
-            String classpath = StringUtils.join( classpathElements.iterator(), File.pathSeparator );
-            javadoc.addArgumentPair( "classpath", StringUtils.quoteAndEscape( classpath, '\'' ) );
-
-            String sourcePath =
-                StringUtils.join( JDiffUtils.getProjectSourceRoots( project ).iterator(), File.pathSeparator );
-            javadoc.addArgumentPair( "sourcepath", StringUtils.quoteAndEscape( sourcePath, '\'' ) );
-
-            Set<String> pckgs = JDiffUtils.getPackages( project );
-            for ( String pckg : pckgs )
-            {
-                javadoc.addArgument( pckg );
-            }
-            packages.addAll( pckgs );
-
-            javadoc.execute( workingDirectory.getAbsolutePath() );
-        }
-        catch ( IOException e )
-        {
-            throw new JavadocExecutionException( e.getMessage(), e );
-        }
-    }
-
-    private String getPluginClasspath()
-    {
-        //@todo prepend with optional docletArtifacts
-        StringBuffer cp = new StringBuffer();
-        cp.append( pluginArtifactMap.get( "jdiff:jdiff" ).getFile().getAbsolutePath() );
-        cp.append( File.pathSeparatorChar );
-        cp.append( pluginArtifactMap.get( "xerces:xercesImpl" ).getFile().getAbsolutePath() );
-        cp.append( File.pathSeparatorChar );
-        
-        return cp.toString();
-    }
-
     private void generateReport( String srcDir, String oldApi, String newApi )
         throws MavenReportException
     {
         try
         {
             getReportOutputDirectory().mkdirs();
-            
+
             JavadocExecutor javadoc = new JavadocExecutor( getJavadocExecutable(), getLog() );
 
             javadoc.addArgument( "-private" );
@@ -407,7 +307,7 @@ public class JDiffMojo
             {
                 javadoc.addArgument( pckg );
             }
-            
+
             javadoc.execute( workingDirectory.getAbsolutePath() );
         }
         catch ( IOException e )
@@ -520,134 +420,18 @@ public class JDiffMojo
         return ResourceBundle.getBundle( "jdiff-report", locale, this.getClass().getClassLoader() );
     }
 
-    // Borrowed from maven-javadoc-plugin
-    /**
-     * Get the path of the Javadoc tool executable depending the user entry or try to find it depending the OS or the
-     * <code>java.home</code> system property or the <code>JAVA_HOME</code> environment variable.
-     * 
-     * @return the path of the Javadoc tool
-     * @throws IOException if not found
-     */
-    private String getJavadocExecutable()
-        throws IOException
-    {
-        Toolchain tc = getToolchain();
-
-        if ( tc != null )
-        {
-            getLog().info( "Toolchain in javadoc-plugin: " + tc );
-            if ( javadocExecutable != null )
-            {
-                getLog().warn( "Toolchains are ignored, 'javadocExecutable' parameter is set to " + javadocExecutable );
-            }
-            else
-            {
-                javadocExecutable = tc.findTool( "javadoc" );
-            }
-        }
-
-        String javadocCommand = "javadoc" + ( SystemUtils.IS_OS_WINDOWS ? ".exe" : "" );
-
-        File javadocExe;
-
-        // ----------------------------------------------------------------------
-        // The javadoc executable is defined by the user
-        // ----------------------------------------------------------------------
-        if ( StringUtils.isNotEmpty( javadocExecutable ) )
-        {
-            javadocExe = new File( javadocExecutable );
-
-            if ( javadocExe.isDirectory() )
-            {
-                javadocExe = new File( javadocExe, javadocCommand );
-            }
-
-            if ( SystemUtils.IS_OS_WINDOWS && javadocExe.getName().indexOf( '.' ) < 0 )
-            {
-                javadocExe = new File( javadocExe.getPath() + ".exe" );
-            }
-
-            if ( !javadocExe.isFile() )
-            {
-                throw new IOException( "The javadoc executable '" + javadocExe
-                    + "' doesn't exist or is not a file. Verify the <javadocExecutable/> parameter." );
-            }
-
-            return javadocExe.getAbsolutePath();
-        }
-
-        // ----------------------------------------------------------------------
-        // Try to find javadocExe from System.getProperty( "java.home" )
-        // By default, System.getProperty( "java.home" ) = JRE_HOME and JRE_HOME
-        // should be in the JDK_HOME
-        // ----------------------------------------------------------------------
-        // For IBM's JDK 1.2
-        if ( SystemUtils.IS_OS_AIX )
-        {
-            javadocExe =
-                new File( SystemUtils.getJavaHome() + File.separator + ".." + File.separator + "sh", javadocCommand );
-        }
-        else if ( SystemUtils.IS_OS_MAC_OSX )
-        {
-            javadocExe = new File( SystemUtils.getJavaHome() + File.separator + "bin", javadocCommand );
-        }
-        else
-        {
-            javadocExe =
-                new File( SystemUtils.getJavaHome() + File.separator + ".." + File.separator + "bin", javadocCommand );
-        }
-
-        // ----------------------------------------------------------------------
-        // Try to find javadocExe from JAVA_HOME environment variable
-        // ----------------------------------------------------------------------
-        if ( !javadocExe.exists() || !javadocExe.isFile() )
-        {
-            Properties env = CommandLineUtils.getSystemEnvVars();
-            String javaHome = env.getProperty( "JAVA_HOME" );
-            if ( StringUtils.isEmpty( javaHome ) )
-            {
-                throw new IOException( "The environment variable JAVA_HOME is not correctly set." );
-            }
-            if ( ( !new File( javaHome ).exists() ) || ( !new File( javaHome ).isDirectory() ) )
-            {
-                throw new IOException( "The environment variable JAVA_HOME=" + javaHome
-                    + " doesn't exist or is not a valid directory." );
-            }
-
-            javadocExe = new File( env.getProperty( "JAVA_HOME" ) + File.separator + "bin", javadocCommand );
-        }
-
-        if ( !javadocExe.exists() || !javadocExe.isFile() )
-        {
-            throw new IOException( "The javadoc executable '" + javadocExe
-                + "' doesn't exist or is not a file. Verify the JAVA_HOME environment variable." );
-        }
-
-        return javadocExe.getAbsolutePath();
-    }
-
-    private Toolchain getToolchain()
-    {
-        Toolchain tc = null;
-        if ( toolchainManager != null )
-        {
-            tc = toolchainManager.getToolchainFromBuildContext( "jdk", session );
-        }
-
-        return tc;
-    }
-
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {
         // first project should do the checkout
-        if( project.equals( reactorProjects.get( 0 ) ) )
+        if ( project.equals( reactorProjects.get( 0 ) ) )
         {
             Artifact artifact = resolveArtifact( comparisonVersion );
             MavenProject externalProject;
             try
             {
-                externalProject = mavenProjectBuilder.buildFromRepository( artifact, remoteRepositories, localRepository );
+                externalProject =
+                    mavenProjectBuilder.buildFromRepository( artifact, remoteRepositories, localRepository );
             }
             catch ( ProjectBuildingException e )
             {
@@ -655,11 +439,11 @@ public class JDiffMojo
             }
 
             File checkoutDirectory = new File( workingDirectory, externalProject.getVersion() );
-            
+
             try
             {
                 fetchSources( checkoutDirectory, externalProject );
-                
+
                 session.getPluginContext( pluginDescriptor, project ).put( JDIFF_CHECKOUT_DIRECTORY, checkoutDirectory );
             }
             catch ( IOException e )
@@ -671,7 +455,7 @@ public class JDiffMojo
                 throw new MojoExecutionException( e.getMessage(), e );
             }
         }
-        
+
         if ( !canGenerateReport() )
         {
             return;
@@ -705,7 +489,7 @@ public class JDiffMojo
 
     /**
      * This method is called when the report generation is invoked by maven-site-plugin.
-     * 
+     *
      * @param aSink
      * @param aSinkFactory
      * @param aLocale
@@ -735,17 +519,17 @@ public class JDiffMojo
     {
         updateReportOutputDirectory( reportOutputDirectory, destDir );
     }
-    
+
     public void setDestDir( String destDir )
     {
         this.destDir = destDir;
         updateReportOutputDirectory( reportOutputDirectory, destDir );
     }
-    
+
     private void updateReportOutputDirectory( File reportOutputDirectory, String destDir )
     {
         if ( reportOutputDirectory != null && destDir != null
-             && !reportOutputDirectory.getAbsolutePath().endsWith( destDir ) )
+            && !reportOutputDirectory.getAbsolutePath().endsWith( destDir ) )
         {
             this.reportOutputDirectory = new File( reportOutputDirectory, destDir );
         }
@@ -763,9 +547,9 @@ public class JDiffMojo
 
     public boolean canGenerateReport()
     {
-       return !getProjectSourceRoots( project ).isEmpty();
+        return !getProjectSourceRoots( project ).isEmpty();
     }
-    
+
     private List<String> getProjectSourceRoots( MavenProject p )
     {
         if ( "pom".equals( p.getPackaging().toLowerCase() ) )
@@ -773,9 +557,8 @@ public class JDiffMojo
             return Collections.emptyList();
         }
 
-        return ( p.getCompileSourceRoots() == null
-            ? Collections.<String>emptyList()
-            : new LinkedList<String>( p.getCompileSourceRoots() ) );
+        return ( p.getCompileSourceRoots() == null ? Collections.<String> emptyList()
+                        : new LinkedList<String>( p.getCompileSourceRoots() ) );
     }
-    
+
 }
