@@ -21,6 +21,11 @@ import org.apache.maven.toolchain.ToolchainManager;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 
+/**
+ * Base class of the JDiff mojos.
+ *
+ * @author Alexandre COLLIGNON (acollign)
+ */
 public abstract class BaseJDiffMojo
     extends AbstractMojo
 {
@@ -210,6 +215,13 @@ public abstract class BaseJDiffMojo
         return javadocExe.getAbsolutePath();
     }
 
+    /**
+     * Generates the JDiff XML descriptor.
+     *
+     * @param project project from which the XML if generated
+     * @param tag identifies the XML file
+     * @throws JavadocExecutionException if an error occured during the generation
+     */
     protected void generateJDiffXML( MavenProject project, String tag )
         throws JavadocExecutionException
     {

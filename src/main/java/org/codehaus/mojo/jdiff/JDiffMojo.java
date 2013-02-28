@@ -103,23 +103,17 @@ public class JDiffMojo
     @Parameter( property = "destDir", defaultValue = "apidocs" )
     private String destDir;
 
+    /**
+     * The {@link PluginDescriptor}.
+     */
     @Parameter( defaultValue = "${plugin}", required = true, readonly = true )
     private PluginDescriptor pluginDescriptor;
 
+    /**
+     * Lists of reactors.
+     */
     @Parameter( defaultValue = "${reactorProjects}", required = true, readonly = true )
     List<MavenProject> reactorProjects;
-
-    @Component
-    private MavenProjectBuilder mavenProjectBuilder;
-
-    @Component
-    private ScmManager scmManager;
-
-    @Component
-    private ArtifactMetadataSource metadataSource;
-
-    @Component
-    private ArtifactFactory factory;
 
     /**
      * The local repository where the artifacts are located.
@@ -147,6 +141,24 @@ public class JDiffMojo
     @Parameter
     private String name;
 
+    @Component
+    private MavenProjectBuilder mavenProjectBuilder;
+
+    @Component
+    private ScmManager scmManager;
+
+    @Component
+    private ArtifactMetadataSource metadataSource;
+
+    @Component
+    private ArtifactFactory factory;
+
+    /**
+     * Generates the report.
+     *
+     * @param locale locale used to produce the report
+     * @throws MavenReportException if an error occurred when generating the report.
+     */
     public void executeReport( Locale locale )
         throws MavenReportException
     {
@@ -195,11 +207,25 @@ public class JDiffMojo
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.apache.maven.reporting.MavenReport#isExternalReport()
+     */
     public boolean isExternalReport()
     {
         return true;
     }
 
+    /**
+     * Returns the {@link MavenProject} based on the given version.
+     *
+     * @param versionSpec version of the project
+     * @return the {@link MavenProject} based on the given version
+     * @throws MojoFailureException
+     * @throws MojoExecutionException
+     * @throws ProjectBuildingException
+     */
     private MavenProject resolveProject( String versionSpec )
         throws MojoFailureException, MojoExecutionException, ProjectBuildingException
     {
@@ -223,6 +249,13 @@ public class JDiffMojo
         return result;
     }
 
+    /**
+     * Returns the SCM connection string of a {@link MavenProject}.
+     *
+     * @param mavenProject a {@link MavenProject}
+     * @return the SCM connection string of a {@link MavenProject}
+     * @throws MojoFailureException if no SCM connection is set
+     */
     private String getConnection( MavenProject mavenProject )
         throws MojoFailureException
     {
@@ -249,6 +282,15 @@ public class JDiffMojo
         return connection;
     }
 
+    /**
+     * Fetches the source code of a {@link MavenProject}.
+     *
+     * @param checkoutDir directory where to store the source code
+     * @param mavenProject {@link MavenProject} identifying the project to fetch
+     * @throws IOException if an error occurred when handling checkout directory
+     * @throws MojoFailureException if an error occurred when getting project information
+     * @throws ScmException if an error occurred when fetching the source code
+     */
     private void fetchSources( final File checkoutDir, MavenProject mavenProject )
         throws IOException, MojoFailureException, ScmException
     {
@@ -272,6 +314,14 @@ public class JDiffMojo
         }
     }
 
+    /**
+     * Generates the JDiff report.
+     *
+     * @param srcDir the directory containing the source code.
+     * @param oldApi the identifier of the old API
+     * @param newApi the identifier of the new API
+     * @throws MavenReportException if an error occured during the generation
+     */
     private void generateReport( String srcDir, String oldApi, String newApi )
         throws MavenReportException
     {
@@ -320,7 +370,9 @@ public class JDiffMojo
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     public String getDescription( Locale locale )
     {
         if ( StringUtils.isEmpty( description ) )
@@ -331,7 +383,9 @@ public class JDiffMojo
         return description;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     public String getName( Locale locale )
     {
         if ( StringUtils.isEmpty( name ) )
@@ -342,12 +396,22 @@ public class JDiffMojo
         return name;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     public String getOutputName()
     {
         return destDir + "/changes";
     }
 
+    /**
+     * Returns the {@link Artifact} of the given version.
+     *
+     * @param versionSpec version of the {@link Artifact} to search for
+     * @return the {@link Artifact} of the given version
+     * @throws MojoFailureException
+     * @throws MojoExecutionException
+     */
     private Artifact resolveArtifact( String versionSpec )
         throws MojoFailureException, MojoExecutionException
     {
@@ -404,6 +468,11 @@ public class JDiffMojo
         return previousArtifact;
     }
 
+    /**
+     * Removes every Snapshot ArtifactVersion.
+     *
+     * @param versions list to filter
+     */
     private void filterSnapshots( List<ArtifactVersion> versions )
     {
         for ( Iterator<ArtifactVersion> versionIterator = versions.iterator(); versionIterator.hasNext(); )
@@ -415,11 +484,22 @@ public class JDiffMojo
         }
     }
 
+    /**
+     * Returns the {@link ResourceBundle}.
+     *
+     * @param locale the {@link Locale}
+     * @return the {@link ResourceBundle}
+     */
     private ResourceBundle getBundle( Locale locale )
     {
         return ResourceBundle.getBundle( "jdiff-report", locale, this.getClass().getClassLoader() );
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.apache.maven.plugin.AbstractMojo#execute()
+     */
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {
@@ -474,13 +554,20 @@ public class JDiffMojo
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     public void generate( org.codehaus.doxia.sink.Sink sink, Locale locale )
         throws MavenReportException
     {
         generate( sink, null, locale );
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.apache.maven.reporting.MavenReport#generate(org.codehaus.doxia.sink.Sink, java.util.Locale)
+     */
     public void generate( Sink aSink, Locale aLocale )
         throws MavenReportException
     {
@@ -508,18 +595,29 @@ public class JDiffMojo
         executeReport( aLocale );
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     public String getCategoryName()
     {
         return MavenReport.CATEGORY_PROJECT_REPORTS;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Sets the output directory of the report.
+     *
+     * @param reportOutputDirectory the output directory
+     */
     public void setReportOutputDirectory( File reportOutputDirectory )
     {
         updateReportOutputDirectory( reportOutputDirectory, destDir );
     }
 
+    /**
+     * Sets the destination directory.
+     *
+     * @param destDir destination directory
+     */
     public void setDestDir( String destDir )
     {
         this.destDir = destDir;
@@ -539,17 +637,30 @@ public class JDiffMojo
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     public File getReportOutputDirectory()
     {
         return reportOutputDirectory;
     }
 
+    /**
+     * Returns true if the report can be generated.
+     *
+     * @return true if the report can be generated
+     */
     public boolean canGenerateReport()
     {
         return !getProjectSourceRoots( project ).isEmpty();
     }
 
+    /**
+     * Returns folders containing sources.
+     *
+     * @param p a {@link MavenProject}
+     * @return a list of path containing sources
+     */
     private List<String> getProjectSourceRoots( MavenProject p )
     {
         if ( "pom".equals( p.getPackaging().toLowerCase() ) )
