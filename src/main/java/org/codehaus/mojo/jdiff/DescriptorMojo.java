@@ -164,7 +164,7 @@ public class DescriptorMojo
 
             Set<String> pckgs = new TreeSet<String>();
 
-            if ( includePackageNames != null && !includePackageNames.isEmpty() )
+            if ( !StringUtils.isEmpty( includePackageNames ) )
             {
                 List<String> names = Arrays.asList( includePackageNames.split( " " ) );
 
