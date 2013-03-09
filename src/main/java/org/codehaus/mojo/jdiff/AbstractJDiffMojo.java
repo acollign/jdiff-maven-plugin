@@ -25,7 +25,6 @@ import org.apache.maven.model.Build;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -61,13 +60,6 @@ public abstract class AbstractJDiffMojo
      */
     @Parameter( property = "jdiff.forceCheckout", defaultValue = "false" )
     private boolean forceCheckout;
-
-    // @Parameter( defaultValue = "${plugin}", required = true, readonly = true ) works only with M3+
-    @Parameter( defaultValue = "${mojoExecution.mojoDescriptor.pluginDescriptor}", required = true, readonly = true )
-    private PluginDescriptor pluginDescriptor;
-    
-    @Parameter( defaultValue = "${project}", required = true, readonly = true )
-    private MavenProject project;
 
     @Parameter( defaultValue = "${reactorProjects}", required = true, readonly = true )
     List<MavenProject> reactorProjects;
@@ -106,11 +98,6 @@ public abstract class AbstractJDiffMojo
     @Parameter
     private String name;
 
-    protected MavenProject getProject()
-    {
-        return project;
-    }
-    
     public File getReportOutputDirectory()
     {
         return reportOutputDirectory;
@@ -185,7 +172,7 @@ public abstract class AbstractJDiffMojo
             File executionRootDirectory = new File( getSession().getExecutionRootDirectory() );
             String modulePath  = executionRootDirectory.toURI().relativize( project.getBasedir().toURI() ).getPath();
             
-            File checkoutDirectory = (File) getSession().getPluginContext( pluginDescriptor, reactorProjects.get( 0 ) ).get( JDIFF_CHECKOUT_DIRECTORY );
+            File checkoutDirectory = (File) getSession().getPluginContext( getPluginDescriptor(), reactorProjects.get( 0 ) ).get( JDIFF_CHECKOUT_DIRECTORY );
             result = mavenProjectBuilder.build( new File( checkoutDirectory, modulePath + "pom.xml" ), localRepository, null );
             
             getLog().debug(  new File( checkoutDirectory, modulePath + "pom.xml" ).getAbsolutePath() );
@@ -417,7 +404,7 @@ public abstract class AbstractJDiffMojo
             {
                 fetchSources( checkoutDirectory, externalProject );
                 
-                getSession().getPluginContext( pluginDescriptor, project ).put( JDIFF_CHECKOUT_DIRECTORY, checkoutDirectory );
+                getSession().getPluginContext( getPluginDescriptor(), project ).put( JDIFF_CHECKOUT_DIRECTORY, checkoutDirectory );
             }
             catch ( IOException e )
             {

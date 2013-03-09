@@ -13,6 +13,8 @@ import org.apache.commons.lang.SystemUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecution;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -35,11 +37,6 @@ public abstract class BaseJDiffMojo
     @Parameter( property = "javadocExecutable" )
     private String javadocExecutable;
     
-    /**
-     */
-    @Parameter( defaultValue = "${plugin.artifactMap}", required = true, readonly = true )
-    private Map<String, Artifact> pluginArtifactMap;
-    
     @Component
     private ToolchainManager toolchainManager;
     
@@ -54,6 +51,12 @@ public abstract class BaseJDiffMojo
      */
     private Set<String> packages = new HashSet<String>();
 
+    @Parameter( defaultValue = "${project}", required = true, readonly = true )
+    protected MavenProject project;
+
+    @Parameter( defaultValue = "${mojoExecution}", required = true, readonly = true )
+    protected MojoExecution mojoExecution;
+
     protected final MavenSession getSession()
     {
         return session;
@@ -62,6 +65,17 @@ public abstract class BaseJDiffMojo
     protected final Set<String> getPackages()
     {
         return packages;
+    }
+    
+    @SuppressWarnings( "unchecked" )
+    protected final Map<String, Artifact> getPluginArtifactMap()
+    {
+        return mojoExecution.getMojoDescriptor().getPluginDescriptor().getArtifactMap();
+    }
+    
+    protected final PluginDescriptor getPluginDescriptor()
+    {
+        return mojoExecution.getMojoDescriptor().getPluginDescriptor();
     }
     
     protected void generateJDiffXML( MavenProject project, String tag )
@@ -224,9 +238,9 @@ public abstract class BaseJDiffMojo
     {
         //@todo prepend with optional docletArtifacts
         StringBuffer cp = new StringBuffer();
-        cp.append( pluginArtifactMap.get( "jdiff:jdiff" ).getFile().getAbsolutePath() );
+        cp.append( getPluginArtifactMap().get( "jdiff:jdiff" ).getFile().getAbsolutePath() );
         cp.append( File.pathSeparatorChar );
-        cp.append( pluginArtifactMap.get( "xerces:xercesImpl" ).getFile().getAbsolutePath() );
+        cp.append( getPluginArtifactMap().get( "xerces:xercesImpl" ).getFile().getAbsolutePath() );
         cp.append( File.pathSeparatorChar );
         
         return cp.toString();
@@ -235,5 +249,10 @@ public abstract class BaseJDiffMojo
     protected abstract List<String> getCompileSourceRoots();
     
     protected abstract String getBuildOutputDirectory();
+
+    protected MavenProject getProject()
+    {
+        return project;
+    }
 
 }
