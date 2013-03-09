@@ -22,6 +22,7 @@ import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.doxia.sink.Sink;
 import org.apache.maven.doxia.sink.SinkFactory;
 import org.apache.maven.model.Build;
+import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
@@ -61,12 +62,13 @@ public abstract class AbstractJDiffMojo
     @Parameter( property = "jdiff.forceCheckout", defaultValue = "false" )
     private boolean forceCheckout;
 
-    @Parameter( defaultValue = "${plugin}", required = true, readonly = true )
+    // @Parameter( defaultValue = "${plugin}", required = true, readonly = true ) works only with M3+
+    @Parameter( defaultValue = "${mojoExecution.mojoDescriptor.pluginDescriptor}", required = true, readonly = true )
     private PluginDescriptor pluginDescriptor;
-    /**
-     */
+    
     @Parameter( defaultValue = "${project}", required = true, readonly = true )
     private MavenProject project;
+
     @Parameter( defaultValue = "${reactorProjects}", required = true, readonly = true )
     List<MavenProject> reactorProjects;
     
