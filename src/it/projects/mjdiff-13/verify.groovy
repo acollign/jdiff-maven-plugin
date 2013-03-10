@@ -17,4 +17,10 @@
  * under the License.
  */
 assert !( new File( basedir, 'target/site' ).exists() )
-assert new File( basedir, 'target/jdiff/jdiff-13-1.0-SNAPSHOT.xml' ).exists()
+def desc = new File( basedir, 'target/jdiff/mjdiff-13-1.0-SNAPSHOT.xml' )
+assert desc.exists()
+
+def api = new XmlParser().parse(desc)
+assert api.package.size() == 2
+assert api.package[0].attribute("name") == "foo.bar"
+assert api.package[1].attribute("name") == "foo.square"
