@@ -22,7 +22,6 @@ import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.doxia.sink.Sink;
 import org.apache.maven.doxia.sink.SinkFactory;
 import org.apache.maven.model.Build;
-import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
@@ -55,15 +54,15 @@ public abstract class AbstractJDiffMojo
     @Parameter( property = "jdiff.baseVersion", defaultValue = "${project.version}" )
     private String baseVersion;
     /**
-     * Force a checkout instead of an update when the sources have already been checked out during a previous run. 
-     * 
+     * Force a checkout instead of an update when the sources have already been checked out during a previous run.
+     *
      */
     @Parameter( property = "jdiff.forceCheckout", defaultValue = "false" )
     private boolean forceCheckout;
 
     @Parameter( defaultValue = "${reactorProjects}", required = true, readonly = true )
     List<MavenProject> reactorProjects;
-    
+
     @Component
     private MavenProjectBuilder mavenProjectBuilder;
     @Component
@@ -124,10 +123,10 @@ public abstract class AbstractJDiffMojo
         {
             throw new MavenReportException( e.getMessage() );
         }
-    
+
         String lhsTag = getApiName( lhsProject.getVersion() );
         String rhsTag = getApiName( rhsProject.getVersion() );
-    
+
         try
         {
             generateJDiffXML( lhsProject, lhsTag );
@@ -137,9 +136,9 @@ public abstract class AbstractJDiffMojo
         {
             throw new MavenReportException( e.getMessage(), e );
         }
-    
+
         generateReport( getSourceDirectory( rhsProject.getBuild() ), lhsTag, rhsTag );
-        
+
         try
         {
             IOUtil.copy( getClass().getResourceAsStream( "/black.gif" ), new FileWriter( new File( reportOutputDirectory, "black.gif" ) ) );
@@ -151,7 +150,7 @@ public abstract class AbstractJDiffMojo
     }
 
     protected abstract String getApiName( String lhsTag );
-    
+
     protected abstract String getSourceDirectory( Build build );
 
     public boolean isExternalReport()
@@ -171,10 +170,10 @@ public abstract class AbstractJDiffMojo
         {
             File executionRootDirectory = new File( getSession().getExecutionRootDirectory() );
             String modulePath  = executionRootDirectory.toURI().relativize( project.getBasedir().toURI() ).getPath();
-            
+
             File checkoutDirectory = (File) getSession().getPluginContext( getPluginDescriptor(), reactorProjects.get( 0 ) ).get( JDIFF_CHECKOUT_DIRECTORY );
             result = mavenProjectBuilder.build( new File( checkoutDirectory, modulePath + "pom.xml" ), localRepository, null );
-            
+
             getLog().debug(  new File( checkoutDirectory, modulePath + "pom.xml" ).getAbsolutePath() );
         }
         return result;
@@ -187,9 +186,9 @@ public abstract class AbstractJDiffMojo
         {
             throw new MojoFailureException( "SCM Connection is not set in your pom.xml." );
         }
-    
+
         String connection = mavenProject.getScm().getConnection();
-    
+
         if ( connection != null )
         {
             if ( connection.length() > 0 )
@@ -198,7 +197,7 @@ public abstract class AbstractJDiffMojo
             }
         }
         connection = mavenProject.getScm().getDeveloperConnection();
-    
+
         if ( StringUtils.isEmpty( connection ) )
         {
             throw new MojoFailureException( "SCM Connection is not set in your pom.xml." );
@@ -213,18 +212,18 @@ public abstract class AbstractJDiffMojo
         {
             FileUtils.deleteDirectory( checkoutDir );
         }
-    
+
         if ( checkoutDir.mkdirs() )
         {
-    
+
             getLog().info( "Performing checkout to " + checkoutDir );
-    
+
             new ScmCommandExecutor( scmManager, getConnection( mavenProject ), getLog() ).checkout( checkoutDir.getPath() );
         }
         else
         {
             getLog().info( "Performing update to " + checkoutDir );
-    
+
             new ScmCommandExecutor( scmManager, getConnection( mavenProject ), getLog() ).update( checkoutDir.getPath() );
         }
     }
@@ -235,36 +234,36 @@ public abstract class AbstractJDiffMojo
         try
         {
             getReportOutputDirectory().mkdirs();
-            
+
             JavadocExecutor javadoc = new JavadocExecutor( getJavadocExecutable(), getLog() );
-    
+
             javadoc.addArgument( "-private" );
-    
+
             javadoc.addArgumentPair( "d", getReportOutputDirectory().getAbsolutePath() );
-    
+
             javadoc.addArgumentPair( "sourcepath", srcDir );
-    
+
             List<String> classpathElements = new ArrayList<String>();
             classpathElements.add( getBuildOutputDirectory() );
             classpathElements.addAll( JDiffUtils.getClasspathElements( project ) );
             String classpath = StringUtils.join( classpathElements.iterator(), File.pathSeparator );
             javadoc.addArgumentPair( "classpath", StringUtils.quoteAndEscape( classpath, '\'' ) );
-    
+
             javadoc.addArgumentPair( "doclet", "jdiff.JDiff" );
-    
+
             javadoc.addArgumentPair( "docletpath", getDocletpath() );
-    
+
             javadoc.addArgumentPair( "oldapi", oldApi );
-    
+
             javadoc.addArgumentPair( "newapi", newApi );
-    
+
             javadoc.addArgument( "-stats" );
-    
+
             for ( String pckg : getPackages() )
             {
                 javadoc.addArgument( pckg );
             }
-            
+
             javadoc.execute( workingDirectory.getAbsolutePath() );
         }
         catch ( IOException e )
@@ -284,7 +283,7 @@ public abstract class AbstractJDiffMojo
         {
             return getBundle( locale ).getString( "report.jdiff.description" );
         }
-    
+
         return description;
     }
 
@@ -295,7 +294,7 @@ public abstract class AbstractJDiffMojo
         {
             return getBundle( locale ).getString( "report.jdiff.name" );
         }
-    
+
         return name;
     }
 
@@ -318,14 +317,14 @@ public abstract class AbstractJDiffMojo
         {
             throw new MojoFailureException( "Invalid comparison version: " + e.getMessage() );
         }
-    
+
         Artifact previousArtifact;
         try
         {
             previousArtifact =
                 factory.createDependencyArtifact( project.getGroupId(), project.getArtifactId(), range,
                                                   project.getPackaging(), null, Artifact.SCOPE_COMPILE );
-    
+
             if ( !previousArtifact.getVersionRange().isSelectedVersionKnown( previousArtifact ) )
             {
                 getLog().debug( "Searching for versions in range: " + previousArtifact.getVersionRange() );
@@ -348,7 +347,7 @@ public abstract class AbstractJDiffMojo
         {
             throw new MojoExecutionException( "Error determining previous version: " + e11.getMessage(), e11 );
         }
-    
+
         if ( previousArtifact.getVersion() == null )
         {
             getLog().info( "Unable to find a previous version of the project in the repository" );
@@ -357,7 +356,7 @@ public abstract class AbstractJDiffMojo
         {
             getLog().debug( "Previous version: " + previousArtifact.getVersion() );
         }
-    
+
         return previousArtifact;
     }
 
@@ -377,7 +376,7 @@ public abstract class AbstractJDiffMojo
         return ResourceBundle.getBundle( "jdiff-report", locale, this.getClass().getClassLoader() );
     }
 
-    
+
 
 
 
@@ -397,13 +396,13 @@ public abstract class AbstractJDiffMojo
             {
                 throw new MojoExecutionException( e.getMessage(), e );
             }
-    
+
             File checkoutDirectory = new File( workingDirectory, externalProject.getVersion() );
-            
+
             try
             {
                 fetchSources( checkoutDirectory, externalProject );
-                
+
                 getSession().getPluginContext( getPluginDescriptor(), project ).put( JDIFF_CHECKOUT_DIRECTORY, checkoutDirectory );
             }
             catch ( IOException e )
@@ -415,16 +414,16 @@ public abstract class AbstractJDiffMojo
                 throw new MojoExecutionException( e.getMessage(), e );
             }
         }
-        
+
         if ( !canGenerateReport() )
         {
             return;
         }
-    
+
         try
         {
             Locale locale = Locale.getDefault();
-    
+
             executeReport( locale );
         }
         catch ( MavenReportException e )
@@ -449,7 +448,7 @@ public abstract class AbstractJDiffMojo
 
     /**
      * This method is called when the report generation is invoked by maven-site-plugin.
-     * 
+     *
      * @param aSink
      * @param aSinkFactory
      * @param aLocale
@@ -464,7 +463,7 @@ public abstract class AbstractJDiffMojo
                                + "The report name should be referenced in this line of output." );
             return;
         }
-    
+
         executeReport( aLocale );
     }
 
@@ -479,7 +478,7 @@ public abstract class AbstractJDiffMojo
     {
         updateReportOutputDirectory( reportOutputDirectory, getDestDir() );
     }
-    
+
     protected void updateReportOutputDirectory( File reportOutputDirectory, String destDir )
     {
         if ( reportOutputDirectory != null && destDir != null
@@ -492,7 +491,7 @@ public abstract class AbstractJDiffMojo
             this.reportOutputDirectory = reportOutputDirectory;
         }
     }
-    
+
     protected abstract String getDestDir();
 
     public boolean canGenerateReport()
@@ -500,15 +499,15 @@ public abstract class AbstractJDiffMojo
        return !getProjectSourceRoots( project ).isEmpty();
     }
 
-    private List<String> getProjectSourceRoots( MavenProject p )
+    private List<String> getProjectSourceRoots( MavenProject project )
     {
-        if ( "pom".equals( p.getPackaging().toLowerCase() ) )
+        if ( "pom".equals( project.getPackaging().toLowerCase() ) )
         {
             return Collections.emptyList();
         }
         else
         {
-            return getCompileSourceRoots();
+            return getCompileSourceRoots(project);
         }
     }
 }

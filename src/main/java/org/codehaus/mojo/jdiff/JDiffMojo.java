@@ -30,6 +30,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.reporting.MavenReport;
 
 /**
@@ -46,44 +47,46 @@ public class JDiffMojo
      */
     @Parameter( defaultValue = "${project.reporting.outputDirectory}/apidocs", required = true, readonly = true )
     private File reportOutputDirectory;
-    
+
     /**
      * The name of the destination directory.
      */
     @Parameter( property = "destDir", defaultValue = "apidocs" )
     private String destDir;
 
+    @Override
     @SuppressWarnings( "unchecked" )
-    protected List<String> getCompileSourceRoots()
+    protected List<String> getCompileSourceRoots(MavenProject project)
     {
-        return ( getProject().getCompileSourceRoots() == null
+        return ( project.getCompileSourceRoots() == null
             ? Collections.<String>emptyList()
-            : new LinkedList<String>( getProject().getCompileSourceRoots() ) );
+            : new LinkedList<String>( project.getCompileSourceRoots() ) );
     }
-    
+
     public void setDestDir( String destDir )
     {
         this.destDir = destDir;
         updateReportOutputDirectory( reportOutputDirectory, destDir );
     }
-    
+
+    @Override
     protected String getDestDir()
     {
         return destDir;
     }
-    
+
     @Override
     protected String getBuildOutputDirectory()
     {
         return getProject().getBuild().getOutputDirectory();
     }
-    
+
     @Override
     protected String getSourceDirectory( Build build )
     {
         return build.getSourceDirectory();
     }
-    
+
     @Override
     protected String getApiName( String lhsTag )
     {

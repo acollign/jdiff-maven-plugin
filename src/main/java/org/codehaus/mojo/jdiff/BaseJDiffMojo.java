@@ -100,10 +100,10 @@ public abstract class BaseJDiffMojo
             javadoc.addArgumentPair( "classpath", StringUtils.quoteAndEscape( classpath, '\'' ) );
     
             String sourcePath =
-                StringUtils.join( JDiffUtils.getProjectSourceRoots( project, getCompileSourceRoots() ).iterator(), File.pathSeparator );
+                StringUtils.join( JDiffUtils.getProjectSourceRoots( project, getCompileSourceRoots(project) ).iterator(), File.pathSeparator );
             javadoc.addArgumentPair( "sourcepath", StringUtils.quoteAndEscape( sourcePath, '\'' ) );
     
-            Set<String> pckgs = JDiffUtils.getPackages( project.getBasedir(), getCompileSourceRoots() );
+            Set<String> pckgs = JDiffUtils.getPackages( project.getBasedir(), getCompileSourceRoots(project) );
             for ( String pckg : pckgs )
             {
                 javadoc.addArgument( pckg );
@@ -246,7 +246,7 @@ public abstract class BaseJDiffMojo
         return cp.toString();
     }
     
-    protected abstract List<String> getCompileSourceRoots();
+    protected abstract List<String> getCompileSourceRoots(MavenProject project);
     
     protected abstract String getBuildOutputDirectory();
 

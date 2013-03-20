@@ -30,6 +30,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.reporting.MavenReport;
 
 /**
@@ -55,7 +56,7 @@ public class TestJDiffMojo
     private String destDir;
 
     @SuppressWarnings( "unchecked" )
-    protected List<String> getCompileSourceRoots()
+    protected List<String> getCompileSourceRoots(MavenProject project)
     {
         return ( getProject().getTestCompileSourceRoots() == null
             ? Collections.<String>emptyList()
